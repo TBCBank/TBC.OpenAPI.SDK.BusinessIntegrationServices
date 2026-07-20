@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="../tests/TBC.OpenAPI.SDK.BusinessIntegrationServices.Tests/TBC.OpenAPI.SDK.BusinessIntegrationServices.Tests.csproj" />
+  <Project Path="TBC.OpenAPI.SDK.BusinessIntegrationServices/TBC.OpenAPI.SDK.BusinessIntegrationServices.csproj" />
+</Solution>
