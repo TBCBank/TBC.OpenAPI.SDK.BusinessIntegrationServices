@@ -5,6 +5,7 @@ using TBC.OpenAPI.SDK.Core.Exceptions;
 
 namespace TBC.OpenAPI.SDK.BusinessIntegrationServices.Tests.Services;
 
+[Collection(IntegrationTestCollection.Name)]
 public class MovementTests : ServiceIntegrationTest
 {
     private const string TestAccountNumber = "GE48TB7873440574631292";

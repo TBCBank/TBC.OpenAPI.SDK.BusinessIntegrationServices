@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace TBC.OpenAPI.SDK.BusinessIntegrationServices.Tests.Services;
 
+[Collection(IntegrationTestCollection.Name)]
 public class TransferTests : ServiceIntegrationTest
 {
     private const string DebitAccountNumber = "GE29TB7777777777777777";

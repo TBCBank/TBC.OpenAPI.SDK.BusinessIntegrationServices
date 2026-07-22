@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace TBC.OpenAPI.SDK.BusinessIntegrationServices.Tests.Services;
 
+[Collection(IntegrationTestCollection.Name)]
 public class StatementTests : ServiceIntegrationTest
 {
     [Fact]
