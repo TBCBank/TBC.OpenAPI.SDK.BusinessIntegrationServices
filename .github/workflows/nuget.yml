@@ -46,13 +46,13 @@ jobs:
         nuget-version: latest
 
     - name: Restore
-      run: dotnet restore src/TBC.OpenAPI.SDK.BusinessIntegrationServices.slnx -p:Configuration=Release
+      run: dotnet restore TBC.OpenAPI.SDK.BusinessIntegrationServices.slnx -p:Configuration=Release
 
     - name: Build
-      run: dotnet build src/TBC.OpenAPI.SDK.BusinessIntegrationServices.slnx -c Release --no-restore -p:SourceRevisionId=$(git rev-parse --short $env:GITHUB_SHA)
+      run: dotnet build TBC.OpenAPI.SDK.BusinessIntegrationServices.slnx -c Release --no-restore -p:SourceRevisionId=$(git rev-parse --short $env:GITHUB_SHA)
 
     - name: Test
-      run: dotnet test src/TBC.OpenAPI.SDK.BusinessIntegrationServices.slnx -c Release --no-restore --no-build --verbosity normal
+      run: dotnet test TBC.OpenAPI.SDK.BusinessIntegrationServices.slnx -c Release --no-restore --no-build --verbosity normal
 
     - name: Push TBC.OpenAPI.SDK.BusinessIntegrationServices
       run: nuget push "src\TBC.OpenAPI.SDK.BusinessIntegrationServices\bin\Release\*.nupkg" -NonInteractive -SkipDuplicate -Source "https://api.nuget.org/v3/index.json" -NoSymbols -ForceEnglishOutput

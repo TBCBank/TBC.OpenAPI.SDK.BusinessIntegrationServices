@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/TBC.OpenAPI.SDK.BusinessIntegrationServices/TBC.OpenAPI.SDK.BusinessIntegrationServices.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/TBC.OpenAPI.SDK.BusinessIntegrationServices.Tests/TBC.OpenAPI.SDK.BusinessIntegrationServices.Tests.csproj" />
+  </Folder>
+  <Folder Name="/examples/">
+    <Project Path="examples/ApiAppExample/ApiAppExample.csproj" />
+    <Project Path="examples/ConsoleAppExample/ConsoleAppExample.csproj" />
+  </Folder>
+</Solution>

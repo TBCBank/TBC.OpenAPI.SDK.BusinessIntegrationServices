@@ -52,10 +52,10 @@ jobs:
         include-prerelease: false
 
     - name: Restore
-      run: dotnet restore src/TBC.OpenAPI.SDK.BusinessIntegrationServices.slnx -p:Configuration=Release
+      run: dotnet restore TBC.OpenAPI.SDK.BusinessIntegrationServices.slnx -p:Configuration=Release
 
     - name: Build
-      run: dotnet build src/TBC.OpenAPI.SDK.BusinessIntegrationServices.slnx -c Release --no-restore -p:SourceRevisionId=$(git rev-parse --short $GITHUB_SHA)
+      run: dotnet build TBC.OpenAPI.SDK.BusinessIntegrationServices.slnx -c Release --no-restore -p:SourceRevisionId=$(git rev-parse --short $GITHUB_SHA)
 
     - name: Test
-      run: dotnet test src/TBC.OpenAPI.SDK.BusinessIntegrationServices.slnx -c Release --no-restore --no-build --verbosity normal
+      run: dotnet test TBC.OpenAPI.SDK.BusinessIntegrationServices.slnx -c Release --no-restore --no-build --verbosity normal
