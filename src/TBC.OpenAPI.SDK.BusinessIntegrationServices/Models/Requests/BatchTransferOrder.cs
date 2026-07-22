@@ -4,7 +4,7 @@ namespace TBC.OpenAPI.SDK.BusinessIntegrationServices
 {
     public class BatchTransferOrder
     {
-        public TransferType TransferType { get; set; }
+        public TransferType? TransferType { get; set; }
 
         public string TransferExternalId { get; set; }
 
