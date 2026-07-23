@@ -4,6 +4,8 @@ namespace TBC.OpenAPI.SDK.BusinessIntegrationServices
 {
     public class ImportSingleTransfersResponse
     {
-        public IEnumerable<SingleTransferResult> SingleTransferResults { get; set; }
+        public IEnumerable<SingleTransferResult> Succeeded { get; set; }
+
+        public IEnumerable<FailedSingleTransferResult> Failed { get; set; }
     }
 }

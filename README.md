@@ -132,11 +132,10 @@ var client = factory.GetBusinessIntegrationServicesClient();
   ```csharp
   var result = await client.ImportSingleTransfers(new ImportSingleTransfersRequest
   {
-      SingleTransferOrders = new[]
+      SingleTransferOrders = new SingleTransferOrder[]
       {
-          new SingleTransferOrder
+          new WithinBankTransferOrder
           {
-              TransferType = TransferType.TransferWithinBank,
               TransferExternalId = "ext-001",
               DebitAccount = new AccountIdentification
               {
