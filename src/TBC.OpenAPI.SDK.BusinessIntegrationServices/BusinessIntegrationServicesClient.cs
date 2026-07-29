@@ -1,9 +1,8 @@
 // Copyright (C) TBC Bank. All Rights Reserved.
 
-using System.Collections.Concurrent;
 using System.Globalization;
-using System.Net;
 using TBC.OpenAPI.SDK.Core;
+using TBC.OpenAPI.SDK.Core.Authentication;
 using TBC.OpenAPI.SDK.Core.Exceptions;
 using TBC.OpenAPI.SDK.Core.Models;
 
@@ -15,7 +14,6 @@ namespace TBC.OpenAPI.SDK.BusinessIntegrationServices
         private const string DateTimePattern = "yyyy-MM-ddTHH:mm:ss";
 
         private readonly IHttpHelper<BusinessIntegrationServicesClient> _http;
-        private readonly ConcurrentDictionary<string, TokenResponse> _tokens = new ConcurrentDictionary<string, TokenResponse>();
 
         public BusinessIntegrationServicesClient(IHttpHelper<BusinessIntegrationServicesClient> http)
         {
@@ -153,14 +151,8 @@ namespace TBC.OpenAPI.SDK.BusinessIntegrationServices
             string scope,
             CancellationToken cancellationToken)
         {
-            var headers = await BuildAuthHeadersAsync(scope, forceRefresh: false, cancellationToken).ConfigureAwait(false);
+            var headers = BuildScopeHeaders(scope);
             var response = await _http.GetJsonAsync<TResult>(path, query, headers, cancellationToken).ConfigureAwait(false);
-
-            if (IsUnauthorized(response))
-            {
-                headers = await BuildAuthHeadersAsync(scope, forceRefresh: true, cancellationToken).ConfigureAwait(false);
-                response = await _http.GetJsonAsync<TResult>(path, query, headers, cancellationToken).ConfigureAwait(false);
-            }
 
             return EnsureSuccess(response);
         }
@@ -171,60 +163,19 @@ namespace TBC.OpenAPI.SDK.BusinessIntegrationServices
             string scope,
             CancellationToken cancellationToken)
         {
-            var headers = await BuildAuthHeadersAsync(scope, forceRefresh: false, cancellationToken).ConfigureAwait(false);
+            var headers = BuildScopeHeaders(scope);
             var response = await _http.PostJsonAsync<TRequest, TResult>(path, data, null, headers, cancellationToken).ConfigureAwait(false);
-
-            if (IsUnauthorized(response))
-            {
-                headers = await BuildAuthHeadersAsync(scope, forceRefresh: true, cancellationToken).ConfigureAwait(false);
-                response = await _http.PostJsonAsync<TRequest, TResult>(path, data, null, headers, cancellationToken).ConfigureAwait(false);
-            }
 
             return EnsureSuccess(response);
         }
 
-        private async Task<HeaderParamCollection> BuildAuthHeadersAsync(
-            string scope,
-            bool forceRefresh,
-            CancellationToken cancellationToken)
+        private static HeaderParamCollection BuildScopeHeaders(string scope)
         {
-            TokenResponse token;
-            if (forceRefresh || !_tokens.TryGetValue(scope, out token) || string.IsNullOrEmpty(token?.AccessToken))
-            {
-                token = await UpdateTokenAsync(scope, cancellationToken).ConfigureAwait(false);
-            }
-
             return new HeaderParamCollection
             {
-                ["Authorization"] = "Bearer " + token.AccessToken
+                [OAuthConstants.ScopeHeaderName] = scope
             };
         }
-
-        private async Task<TokenResponse> UpdateTokenAsync(string scope, CancellationToken cancellationToken)
-        {
-            var form = new UrlFormCollection
-            {
-                ["grant_type"] = TokenRequest.GrantType,
-                ["scope"] = scope
-            };
-
-            var response = await _http
-                .PostUrlFormAsync<TokenResponse>(Constants.OAuthTokenPath, form, cancellationToken)
-                .ConfigureAwait(false);
-
-            if (!response.IsSuccess || string.IsNullOrEmpty(response.Data?.AccessToken))
-            {
-                throw new OpenApiException(
-                    response.Problem?.Title ?? "Error occurred while getting access token",
-                    response.Exception);
-            }
-
-            _tokens[scope] = response.Data;
-            return response.Data;
-        }
-
-        private static bool IsUnauthorized(ApiResponseBase response)
-            => response?.Problem?.Status == (int)HttpStatusCode.Unauthorized;
 
         private static TResult EnsureSuccess<TResult>(ApiResponse<TResult> response)
         {

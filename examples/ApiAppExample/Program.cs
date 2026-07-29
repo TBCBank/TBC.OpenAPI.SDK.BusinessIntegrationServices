@@ -15,7 +15,8 @@ builder.Services.AddBusinessIntegrationServicesClient(new BusinessIntegrationSer
     BaseUrl = "https://test-api.tbcbank.ge/",
     ApiKey = "{apikey}",
     ClientSecret = "{clientSecret}"
-});
+})
+.UseInMemoryCache();
 
 var app = builder.Build();
 

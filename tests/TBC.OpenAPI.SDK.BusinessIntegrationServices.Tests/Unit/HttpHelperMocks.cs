@@ -17,12 +17,19 @@ namespace TBC.OpenAPI.SDK.BusinessIntegrationServices.Tests.Unit
 
         public HttpClient HttpClient { get; }
 
+        /// <summary>
+        /// Base URL of the mock server (with a trailing slash) for wiring up an
+        /// <see cref="HttpClient"/> through the real DI pipeline.
+        /// </summary>
+        public string BaseUrl { get; }
+
         public HttpHelperMocks()
         {
             _mockServer = WireMockServer.Start();
+            BaseUrl = $"{_mockServer.Urls[0]}/";
             HttpClient = new HttpClient
             {
-                BaseAddress = new Uri($"{_mockServer.Urls[0]}/")
+                BaseAddress = new Uri(BaseUrl)
             };
 
             AddOAuthMocks();
@@ -32,8 +39,8 @@ namespace TBC.OpenAPI.SDK.BusinessIntegrationServices.Tests.Unit
 
         private void AddOAuthMocks()
         {
-            // OAuth token endpoint - always succeeds. Keys must be snake_case to match
-            // the [JsonPropertyName] attributes on TokenResponse.
+            // OAuth token endpoint - always succeeds. Keys are snake_case to match the OAuth
+            // token response contract consumed by the SDK core token handler.
             _mockServer
                 .Given(Request.Create().WithPath("/oauth/token").UsingPost())
                 .RespondWith(
@@ -108,6 +115,37 @@ namespace TBC.OpenAPI.SDK.BusinessIntegrationServices.Tests.Unit
                             Transaction = new AccountMovementTransaction
                             {
                                 MovementId = "REFRESH.1",
+                                IsDebit = true
+                            }
+                        }));
+
+            // Same 401-then-200 shape as REFRESH, but on a dedicated path and scenario so a caller
+            // supplied retry handler can consume it exactly once, independently of the REFRESH tests.
+            _mockServer
+                .Given(Request.Create().WithPath("/bab/v1/accounts/movements/RETRY").UsingGet())
+                .InScenario("retry-token-refresh")
+                .WillSetStateTo("Refreshed")
+                .RespondWith(
+                    Response.Create()
+                        .WithStatusCode(401)
+                        .WithBodyAsJson(new
+                        {
+                            title = "Unauthorized",
+                            status = (int)HttpStatusCode.Unauthorized
+                        }));
+
+            _mockServer
+                .Given(Request.Create().WithPath("/bab/v1/accounts/movements/RETRY").UsingGet())
+                .InScenario("retry-token-refresh")
+                .WhenStateIs("Refreshed")
+                .RespondWith(
+                    Response.Create()
+                        .WithStatusCode(200)
+                        .WithBodyAsJson(new GetAccountMovementByIdResponse
+                        {
+                            Transaction = new AccountMovementTransaction
+                            {
+                                MovementId = "RETRY.1",
                                 IsDebit = true
                             }
                         }));

@@ -8,6 +8,11 @@ namespace TBC.OpenAPI.SDK.BusinessIntegrationServices.Tests.Services;
 [Collection(IntegrationTestCollection.Name)]
 public class MovementTests : ServiceIntegrationTest
 {
+    public MovementTests(IntegrationTestHostFixture fixture)
+        : base(fixture)
+    {
+    }
+
     private const string TestAccountNumber = "GE48TB7873440574631292";
 
     [Fact]

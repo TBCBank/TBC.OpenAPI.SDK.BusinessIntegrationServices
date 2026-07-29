@@ -7,6 +7,11 @@ namespace TBC.OpenAPI.SDK.BusinessIntegrationServices.Tests.Services;
 [Collection(IntegrationTestCollection.Name)]
 public class TransferTests : ServiceIntegrationTest
 {
+    public TransferTests(IntegrationTestHostFixture fixture)
+        : base(fixture)
+    {
+    }
+
     private const string DebitAccountNumber = "GE29TB7777777777777777";
     private const string OwnCreditAccountNumber = "GE29TB9999999999999999";
     private const string WithinBankCreditAccountNumber = "GE44TB0600051509630891";
