@@ -25,6 +25,8 @@ jobs:
       DOTNET_GENERATE_ASPNET_CERTIFICATE: 0
       DOTNET_NOLOGO: 1
       DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+      BusinessIntegrationServices__ApiKey: ${{ secrets.DEVOPS_TEST_APIKEY }}
+      BusinessIntegrationServices__ClientSecret: ${{ secrets.DEVOPS_TEST_APISECRET }}
 
     steps:
     - name: Checkout
