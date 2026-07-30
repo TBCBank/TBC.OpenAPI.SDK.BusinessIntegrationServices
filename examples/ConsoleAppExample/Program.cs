@@ -16,6 +16,7 @@ var factory = new OpenApiClientFactoryBuilder()
         ApiKey = "{apikey}",
         ClientSecret = "{clientSecret}"
     })
+    .UseInMemoryCache()
     .Build();
 
 var client = factory.GetBusinessIntegrationServicesClient();

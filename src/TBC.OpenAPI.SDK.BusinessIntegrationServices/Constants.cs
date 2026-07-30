@@ -6,8 +6,6 @@ namespace TBC.OpenAPI.SDK.BusinessIntegrationServices
     {
         public const string ProductionBaseUrl = "https://api.tbcbank.ge/";
 
-        public const string OAuthTokenPath = "oauth/token";
-
         public const string ApiPathPrefix = "bab/v1";
 
         public const string AccountsScope = "bab_accounts";

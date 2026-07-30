@@ -2,25 +2,34 @@
 
 using FluentAssertions;
 using FluentAssertions.Execution;
-using Moq;
-using TBC.OpenAPI.SDK.Core;
+using Microsoft.Extensions.DependencyInjection;
+using TBC.OpenAPI.SDK.BusinessIntegrationServices.Extensions;
 using TBC.OpenAPI.SDK.Core.Exceptions;
 
 namespace TBC.OpenAPI.SDK.BusinessIntegrationServices.Tests.Unit
 {
-    public class BusinessIntegrationServicesClientTests : IClassFixture<HttpHelperMocks>
+    public class BusinessIntegrationServicesClientTests : IClassFixture<HttpHelperMocks>, IDisposable
     {
+        private readonly ServiceProvider _provider;
         private readonly IBusinessIntegrationServicesClient _client;
-
+        private readonly HttpHelperMocks _mocks;
+        
         public BusinessIntegrationServicesClientTests(HttpHelperMocks mocks)
         {
-            var factory = new Mock<IHttpClientFactory>();
-            factory
-                .Setup(x => x.CreateClient(typeof(BusinessIntegrationServicesClient).FullName!))
-                .Returns(mocks.HttpClient);
+            _mocks = mocks;
+            var options = new BusinessIntegrationServicesClientOptions
+            {
+                BaseUrl = mocks.BaseUrl,
+                ApiKey = "test-api-key",
+                ClientSecret = "test-client-secret"
+            };
 
-            var http = new HttpHelper<BusinessIntegrationServicesClient>(factory.Object);
-            _client = new BusinessIntegrationServicesClient(http);
+            _provider = new ServiceCollection()
+                .AddBusinessIntegrationServicesClient(options)
+                .UseInMemoryCache()
+                .BuildServiceProvider();
+
+            _client = _provider.GetRequiredService<IBusinessIntegrationServicesClient>();
         }
 
         [Fact]
@@ -50,8 +59,14 @@ namespace TBC.OpenAPI.SDK.BusinessIntegrationServices.Tests.Unit
         }
 
         [Fact]
-        public async Task GetAccountMovementById_WhenUnauthorizedThenSuccess_RefreshesTokenAndReturnsData()
+        public async Task GetAccountMovementById_WhenUnauthorized_ThrowsAndInvalidatesTokenSoNextRequestSucceeds()
         {
+            // First attempt: the server returns 401. The request surfaces an OpenApiException and
+            // the cached token is invalidated.
+            var act = async () => await _client.GetAccountMovementById("REFRESH", CancellationToken.None);
+            await act.Should().ThrowAsync<OpenApiException>();
+
+            // Second attempt: the token is regenerated and the request now succeeds.
             var response = await _client.GetAccountMovementById("REFRESH", CancellationToken.None);
 
             using var _ = new AssertionScope();
@@ -59,6 +74,47 @@ namespace TBC.OpenAPI.SDK.BusinessIntegrationServices.Tests.Unit
             response.Transaction.Should().NotBeNull();
             response.Transaction.MovementId.Should().Be("REFRESH.1");
             response.Transaction.IsDebit.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GetAccountMovementById_WhenUnauthorizedAndRetryConfigured_RetriesOnceAndSucceeds()
+        {
+            // A caller-supplied retry handler, registered through the configurePipeline hook, sits
+            // outside the OAuth handler. On the 401 the OAuth handler evicts the cached token; the
+            // retry re-enters token handling, acquires a fresh token, and the second attempt succeeds
+            // - all within a single call, with no retry logic or Polly dependency in the SDK.
+            var options = new BusinessIntegrationServicesClientOptions
+            {
+                BaseUrl = _mocks.BaseUrl,
+                ApiKey = "test-api-key",
+                ClientSecret = "test-client-secret"
+            };
+
+            var retryHandler = new SingleRetryOnUnauthorizedHandler();
+
+            using var provider = new ServiceCollection()
+                .AddBusinessIntegrationServicesClient(
+                    options,
+                    configurePipeline: builder => builder.AddHttpMessageHandler(() => retryHandler))
+                .UseInMemoryCache()
+                .BuildServiceProvider();
+
+            var client = provider.GetRequiredService<IBusinessIntegrationServicesClient>();
+
+            var response = await client.GetAccountMovementById("RETRY", CancellationToken.None);
+
+            using var _ = new AssertionScope();
+            retryHandler.RetryCount.Should().Be(1);
+            response.Should().NotBeNull();
+            response.Transaction.Should().NotBeNull();
+            response.Transaction.MovementId.Should().Be("RETRY.1");
+            response.Transaction.IsDebit.Should().BeTrue();
+        }
+
+        public void Dispose()
+        {
+            _provider.Dispose();
+            GC.SuppressFinalize(this);
         }
     }
 }

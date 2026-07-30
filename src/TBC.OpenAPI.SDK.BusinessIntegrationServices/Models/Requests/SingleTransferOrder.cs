@@ -1,11 +1,17 @@
 // Copyright (C) TBC Bank. All Rights Reserved.
 
+using System.Text.Json.Serialization;
+
 namespace TBC.OpenAPI.SDK.BusinessIntegrationServices
 {
-    public class SingleTransferOrder
+    [JsonPolymorphic(TypeDiscriminatorPropertyName = "transferType")]
+    [JsonDerivedType(typeof(OwnAccountTransferOrder), nameof(TransferType.TransferToOwnAccount))]
+    [JsonDerivedType(typeof(WithinBankTransferOrder), nameof(TransferType.TransferWithinBank))]
+    [JsonDerivedType(typeof(OtherBankNationalCurrencyTransferOrder), nameof(TransferType.TransferToOtherBankNationalCurrency))]
+    [JsonDerivedType(typeof(OtherBankForeignCurrencyTransferOrder), nameof(TransferType.TransferToOtherBankForeignCurrency))]
+    [JsonDerivedType(typeof(TreasuryTransferOrder), nameof(TransferType.TreasuryTransfer))]
+    public abstract class SingleTransferOrder
     {
-        public TransferType TransferType { get; set; }
-
         public string TransferExternalId { get; set; }
 
         public AccountIdentification DebitAccount { get; set; }
@@ -19,31 +25,5 @@ namespace TBC.OpenAPI.SDK.BusinessIntegrationServices
         public string Description { get; set; }
 
         public string AdditionalDescription { get; set; }
-
-        public AccountIdentification CreditAccount { get; set; }
-
-        public string BeneficiaryName { get; set; }
-
-        public string BeneficiaryAddress { get; set; }
-
-        public string BeneficiaryTaxCode { get; set; }
-
-        public string BeneficiaryBankCode { get; set; }
-
-        public string BeneficiaryBankName { get; set; }
-
-        public string IntermediaryBankCode { get; set; }
-
-        public string IntermediaryBankName { get; set; }
-
-        public string ChargeDetails { get; set; }
-
-        public string PersonalNumber { get; set; }
-
-        public string TaxpayerCode { get; set; }
-
-        public string TaxpayerName { get; set; }
-
-        public string TreasuryCode { get; set; }
     }
 }

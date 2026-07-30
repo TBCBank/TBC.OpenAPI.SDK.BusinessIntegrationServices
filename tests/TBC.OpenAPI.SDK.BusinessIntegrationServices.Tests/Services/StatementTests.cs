@@ -4,8 +4,14 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace TBC.OpenAPI.SDK.BusinessIntegrationServices.Tests.Services;
 
+[Collection(IntegrationTestCollection.Name)]
 public class StatementTests : ServiceIntegrationTest
 {
+    public StatementTests(IntegrationTestHostFixture fixture)
+        : base(fixture)
+    {
+    }
+
     [Fact]
     public async Task Statement_ValidRequest1_Succeeds()
     {

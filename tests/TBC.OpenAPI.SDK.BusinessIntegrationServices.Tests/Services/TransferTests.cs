@@ -4,8 +4,14 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace TBC.OpenAPI.SDK.BusinessIntegrationServices.Tests.Services;
 
+[Collection(IntegrationTestCollection.Name)]
 public class TransferTests : ServiceIntegrationTest
 {
+    public TransferTests(IntegrationTestHostFixture fixture)
+        : base(fixture)
+    {
+    }
+
     private const string DebitAccountNumber = "GE29TB7777777777777777";
     private const string OwnCreditAccountNumber = "GE29TB9999999999999999";
     private const string WithinBankCreditAccountNumber = "GE44TB0600051509630891";
@@ -23,9 +29,8 @@ public class TransferTests : ServiceIntegrationTest
         {
             SingleTransferOrders =
             [
-                new SingleTransferOrder
+                new OwnAccountTransferOrder
                 {
-                    TransferType = TransferType.TransferToOwnAccount,
                     TransferExternalId = NewExternalId(),
                     DocumentNumber = 10001,
                     Position = 1,
@@ -64,9 +69,8 @@ public class TransferTests : ServiceIntegrationTest
         {
             SingleTransferOrders =
             [
-                new SingleTransferOrder
+                new TreasuryTransferOrder
                 {
-                    TransferType = TransferType.TreasuryTransfer,
                     TransferExternalId = NewExternalId(),
                     DocumentNumber = 10001,
                     Position = 1,
@@ -101,9 +105,8 @@ public class TransferTests : ServiceIntegrationTest
         {
             SingleTransferOrders =
             [
-                new SingleTransferOrder
+                new TreasuryTransferOrder
                 {
-                    TransferType = TransferType.TreasuryTransfer,
                     TransferExternalId = NewExternalId(),
                     DocumentNumber = 10001,
                     Position = 1,
@@ -140,9 +143,8 @@ public class TransferTests : ServiceIntegrationTest
         {
             SingleTransferOrders =
             [
-                new SingleTransferOrder
+                new WithinBankTransferOrder
                 {
-                    TransferType = TransferType.TransferWithinBank,
                     TransferExternalId = NewExternalId(),
                     DocumentNumber = 10001,
                     Position = 1,
@@ -154,6 +156,7 @@ public class TransferTests : ServiceIntegrationTest
                     Amount = new Money { Amount = 3.45M, Currency = "GEL" },
                     Description = "Transfer Within Bank",
                     AdditionalDescription = "Test transfer",
+                    BeneficiaryName = "Test Beneficiary",
                     CreditAccount = new AccountIdentification
                     {
                         AccountNumber = OwnCreditAccountNumber,
@@ -181,9 +184,8 @@ public class TransferTests : ServiceIntegrationTest
         {
             SingleTransferOrders =
             [
-                new SingleTransferOrder
+                new OtherBankNationalCurrencyTransferOrder
                 {
-                    TransferType = TransferType.TransferToOtherBankNationalCurrency,
                     TransferExternalId = NewExternalId(),
                     DocumentNumber = 10002,
                     Position = 1,
@@ -224,9 +226,8 @@ public class TransferTests : ServiceIntegrationTest
         {
             SingleTransferOrders =
             [
-                new SingleTransferOrder
+                new OtherBankForeignCurrencyTransferOrder
                 {
-                    TransferType = TransferType.TransferToOtherBankForeignCurrency,
                     TransferExternalId = NewExternalId(),
                     DocumentNumber = 0,
                     Position = 1,
@@ -288,7 +289,7 @@ public class TransferTests : ServiceIntegrationTest
         var createResponse = await client.ImportSingleTransfers(
             CreateOwnAccountTransferRequest(NewExternalId()),
             CancellationToken.None);
-        var transferId = createResponse.SingleTransferResults.First().TransferId;
+        var transferId = createResponse.Succeeded.First().TransferId;
 
         // Act
         var response = await client.GetSingleTransferStatus(transferId, CancellationToken.None);
@@ -374,8 +375,8 @@ public class TransferTests : ServiceIntegrationTest
     private static void AssertSingleTransferCreated(ImportSingleTransfersResponse response)
     {
         Assert.NotNull(response);
-        Assert.NotNull(response.SingleTransferResults);
-        var result = Assert.Single(response.SingleTransferResults);
+        Assert.NotNull(response.Succeeded);
+        var result = Assert.Single(response.Succeeded);
         Assert.Multiple(
             () => Assert.Equal(1, result.Position),
             () => Assert.True(result.TransferId > 0, "Expected a positive transfer id."));
@@ -386,9 +387,8 @@ public class TransferTests : ServiceIntegrationTest
         {
             SingleTransferOrders =
             [
-                new SingleTransferOrder
+                new OwnAccountTransferOrder
                 {
-                    TransferType = TransferType.TransferToOwnAccount,
                     TransferExternalId = externalId,
                     DocumentNumber = 10001,
                     Position = 1,

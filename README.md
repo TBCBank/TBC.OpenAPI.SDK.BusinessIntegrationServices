@@ -50,8 +50,12 @@ using TBC.OpenAPI.SDK.BusinessIntegrationServices;
 using TBC.OpenAPI.SDK.BusinessIntegrationServices.Extensions;
 
 builder.Services.AddBusinessIntegrationServicesClient(
-    builder.Configuration.GetSection("BusinessIntegrationServices").Get<BusinessIntegrationServicesClientOptions>());
+    builder.Configuration.GetSection("BusinessIntegrationServices").Get<BusinessIntegrationServicesClientOptions>())
+    .UseInMemoryCache();
 ```
+
+The client caches OAuth access tokens per scope. You must pick a cache backend when registering the
+client (there is no implicit default). See [OAuth token caching](#oauth-token-caching) for the options.
 
 After the two steps above, the setup is done and `IBusinessIntegrationServicesClient` can be injected into any container class:
 
@@ -81,9 +85,93 @@ var factory = new OpenApiClientFactoryBuilder()
         // BaseUrl defaults to production; set it to target the test environment:
         // BaseUrl = "https://test-api.tbcbank.ge/"
     })
+    .UseInMemoryCache()
     .Build();
 
 var client = factory.GetBusinessIntegrationServicesClient();
+```
+
+## OAuth Token Caching
+
+The client authenticates with OAuth2 client credentials and caches the resulting access tokens per
+scope. You must explicitly choose where those tokens are cached when registering the client; nothing
+is selected on your behalf. Call exactly one of the following on the builder returned by
+`AddBusinessIntegrationServicesClient(...)`:
+
+* **UseInMemoryCache()** \
+  Caches tokens in a private in-memory store dedicated to this client. The cache is not shared across
+  processes, so in a multi-instance deployment every instance requests and caches its own tokens.
+
+* **UseRegisteredDistributedCache()** \
+  Uses the `IDistributedCache` registered in the container (for example Redis or SQL Server). Prefer
+  this when running more than one instance so all instances share cached tokens.
+
+* **UseDistributedCache(cache)** / **UseDistributedCache(factory)** \
+  Uses the supplied `IDistributedCache` instance (or one built by the supplied factory).
+
+```csharp
+// Share tokens across instances using a distributed cache registered in the container:
+builder.Services.AddStackExchangeRedisCache(o => o.Configuration = "localhost:6379");
+
+builder.Services.AddBusinessIntegrationServicesClient(options)
+    .UseRegisteredDistributedCache();
+```
+
+## Retrying on 401
+
+The client attaches a cached OAuth token to every request. When the API answers `401 Unauthorized`
+the SDK **evicts** the cached token so the *next* request fetches a fresh one, but it does **not**
+retry the failed request and it never renews proactively. A `401` therefore surfaces as a failed
+call unless you add a retry.
+
+The SDK deliberately ships **no retry logic** and takes **no dependency on Polly** or any resilience
+library — you choose the mechanism and hook it into DI. `AddBusinessIntegrationServicesClient(...)`
+takes an optional `configurePipeline` parameter for exactly this: any handler it registers is placed
+*outside* the SDK's OAuth handler, which is the only position from which a retried attempt re-enters
+token handling and picks up the freshly acquired token after the eviction.
+
+> [!IMPORTANT]
+> A retry handler **must clone the request on every attempt**: the OAuth handler consumes an internal
+> scope marker header and the request content is consumed once it is sent, so re-sending the same
+> `HttpRequestMessage` fails. `Microsoft.Extensions.Http.Resilience` clones automatically. Scope the
+> retry to `401 Unauthorized`.
+
+**With `Microsoft.Extensions.Http.Resilience` (Polly):**
+
+```csharp
+using System.Net;
+using Microsoft.Extensions.Http.Resilience;
+using Polly;
+
+builder.Services.AddBusinessIntegrationServicesClient(
+        builder.Configuration.GetSection("BusinessIntegrationServices").Get<BusinessIntegrationServicesClientOptions>(),
+        configurePipeline: pipeline =>
+            pipeline.AddResilienceHandler("bab-401-retry", b =>
+                b.AddRetry(new HttpRetryStrategyOptions
+                {
+                    MaxRetryAttempts = 1,
+                    ShouldHandle = args => ValueTask.FromResult(
+                        args.Outcome.Result?.StatusCode == HttpStatusCode.Unauthorized)
+                })))
+    .UseInMemoryCache();
+```
+
+The `configurePipeline` parameter is also available on the factory overload:
+
+```csharp
+var factory = new OpenApiClientFactoryBuilder()
+    .AddBusinessIntegrationServicesClient(
+        options,
+        configurePipeline: pipeline =>
+            pipeline.AddResilienceHandler("bab-401-retry", b =>
+                b.AddRetry(new HttpRetryStrategyOptions
+                {
+                    MaxRetryAttempts = 1,
+                    ShouldHandle = args => ValueTask.FromResult(
+                        args.Outcome.Result?.StatusCode == HttpStatusCode.Unauthorized)
+                })))
+    .UseInMemoryCache()
+    .Build();
 ```
 
 ## Account Statement Methods
@@ -132,11 +220,10 @@ var client = factory.GetBusinessIntegrationServicesClient();
   ```csharp
   var result = await client.ImportSingleTransfers(new ImportSingleTransfersRequest
   {
-      SingleTransferOrders = new[]
+      SingleTransferOrders = new SingleTransferOrder[]
       {
-          new SingleTransferOrder
+          new WithinBankTransferOrder
           {
-              TransferType = TransferType.TransferWithinBank,
               TransferExternalId = "ext-001",
               DebitAccount = new AccountIdentification
               {
