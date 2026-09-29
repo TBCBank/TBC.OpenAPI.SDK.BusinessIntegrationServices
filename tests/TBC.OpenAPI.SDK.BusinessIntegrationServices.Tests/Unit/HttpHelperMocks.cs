@@ -1,6 +1,7 @@
 // Copyright (C) TBC Bank. All Rights Reserved.
 
 using System.Net;
+using TBC.OpenAPI.SDK.BusinessIntegrationServices.Models.Responses;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 using WireMock.Server;
@@ -34,6 +35,7 @@ namespace TBC.OpenAPI.SDK.BusinessIntegrationServices.Tests.Unit
 
             AddOAuthMocks();
             AddStatementMocks();
+            AddBalanceMocks();
             AddMovementMocks();
         }
 
@@ -70,6 +72,22 @@ namespace TBC.OpenAPI.SDK.BusinessIntegrationServices.Tests.Unit
                             ClosingBalance = 250.75m,
                             CreditSum = 200.25m,
                             DebitSum = 50.00m
+                        }));
+        }
+
+        private void AddBalanceMocks()
+        {
+            _mockServer
+                .Given(Request.Create().WithPath($"/bab/v1/accounts/{StatementAccountNumber}/balances/GEL").UsingGet())
+                .RespondWith(
+                    Response.Create()
+                        .WithStatusCode(200)
+                        .WithBodyAsJson(new GetAccountBalanceResponse
+                        {
+                            CurrentBalance = 250.75m,
+                            AvailableBalance = 300.25m,
+                            OverdraftLimit = 50.00m,
+                            Currency = "GEL"
                         }));
         }
 

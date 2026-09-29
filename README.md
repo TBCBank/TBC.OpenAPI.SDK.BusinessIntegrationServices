@@ -2,7 +2,7 @@
 
 [![NuGet Version](https://img.shields.io/nuget/v/TBC.OpenAPI.SDK.BusinessIntegrationServices)](https://www.nuget.org/packages/TBC.OpenAPI.SDK.BusinessIntegrationServices)
 
-[TBC.OpenAPI.SDK.BusinessIntegrationServices](https://www.nuget.org/packages/TBC.OpenAPI.SDK.BusinessIntegrationServices) is a .NET client SDK for the TBC Bank **Business Integration Services (BIS)** API. It provides typed access to account statements, account movements, and single/batch transfer operations, with built-in OAuth2 client-credentials authentication and token management.
+[TBC.OpenAPI.SDK.BusinessIntegrationServices](https://www.nuget.org/packages/TBC.OpenAPI.SDK.BusinessIntegrationServices) is a .NET client SDK for the TBC Bank **Business Integration Services (BIS)** API. It provides typed access to account balances, statements, movements, and single/batch transfer operations, with built-in OAuth2 client-credentials authentication and token management.
 
 The SDK is built on top of [TBC.OpenAPI.SDK.Core](https://www.nuget.org/packages/TBC.OpenAPI.SDK.Core) and is compatible with `.netstandard2.0` and `.net10.0`.
 
@@ -14,7 +14,7 @@ In order to use the SDK it is mandatory to have an **apikey** and **client secre
 
 Your account must be granted the relevant scopes:
 
-* `bab_accounts` — for account statement and movement operations
+* `bab_accounts` — for account balance, statement, and movement operations
 * `bab_transfers` — for transfer operations
 
 ## Configuration
@@ -185,6 +185,18 @@ var factory = new OpenApiClientFactoryBuilder()
       accountCurrencyCode: "GEL",
       periodFrom: DateTime.Today.AddDays(-30),
       periodTo: DateTime.Today,
+      cancellationToken);
+  ```
+
+## Account Balance Methods
+
+* **GetAccountBalances** \
+  Retrieve the current and available balances, overdraft limit, and currency for an account.
+
+  ```csharp
+  var balance = await client.GetAccountBalances(
+      accountNumber: "GE00TB0000000000000000",
+      currency: "GEL",
       cancellationToken);
   ```
 
