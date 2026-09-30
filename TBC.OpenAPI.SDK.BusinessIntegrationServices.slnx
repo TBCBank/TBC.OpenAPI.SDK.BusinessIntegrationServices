@@ -8,5 +8,6 @@
   <Folder Name="/examples/">
     <Project Path="examples/ApiAppExample/ApiAppExample.csproj" />
     <Project Path="examples/ConsoleAppExample/ConsoleAppExample.csproj" />
+    <Project Path="examples/WinFormsAppExample/WinFormsAppExample.csproj" Id="e93d05ff-b69e-42c0-993e-b00c3bf7837e" />
   </Folder>
 </Solution>

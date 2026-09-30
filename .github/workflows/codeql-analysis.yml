@@ -28,6 +28,10 @@ jobs:
       DOTNET_GENERATE_ASPNET_CERTIFICATE: 0
       DOTNET_NOLOGO: 1
       DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+      PROJECTS_LIST: >-
+        tests/TBC.OpenAPI.SDK.BusinessIntegrationServices.Tests/TBC.OpenAPI.SDK.BusinessIntegrationServices.Tests.csproj
+        examples/ApiAppExample/ApiAppExample.csproj
+        examples/ConsoleAppExample/ConsoleAppExample.csproj
     permissions:
       actions: read
       contents: read
@@ -56,10 +60,16 @@ jobs:
         include-prerelease: false
 
     - name: Restore
-      run: dotnet restore TBC.OpenAPI.SDK.BusinessIntegrationServices.slnx
+      run: |
+        for project in $PROJECTS_LIST; do
+          dotnet restore "$project"
+        done
 
     - name: Build
-      run: dotnet build TBC.OpenAPI.SDK.BusinessIntegrationServices.slnx -c Release --no-restore
+      run: |
+        for project in $PROJECTS_LIST; do
+          dotnet build "$project" -c Release --no-restore
+        done
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v4
