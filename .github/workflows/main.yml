@@ -7,7 +7,6 @@ on:
     paths-ignore:
       - 'images/**'
       - 'docs/**'
-      - 'examples/**'
       - 'packages/**'
       - 'README.md'
     branches: [ master, main ]
@@ -15,7 +14,6 @@ on:
     paths-ignore:
       - 'images/**'
       - 'docs/**'
-      - 'examples/**'
       - 'packages/**'
       - 'README.md'
     branches: [ master, main ]
@@ -38,6 +36,10 @@ jobs:
       DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
       BusinessIntegrationServices__ApiKey: ${{ secrets.DEVOPS_TEST_APIKEY }}
       BusinessIntegrationServices__ClientSecret: ${{ secrets.DEVOPS_TEST_APISECRET }}
+      PROJECTS_LIST: >-
+        tests/TBC.OpenAPI.SDK.BusinessIntegrationServices.Tests/TBC.OpenAPI.SDK.BusinessIntegrationServices.Tests.csproj
+        examples/ApiAppExample/ApiAppExample.csproj
+        examples/ConsoleAppExample/ConsoleAppExample.csproj
 
     steps:
     - name: Checkout
@@ -52,10 +54,41 @@ jobs:
         include-prerelease: false
 
     - name: Restore
-      run: dotnet restore TBC.OpenAPI.SDK.BusinessIntegrationServices.slnx -p:Configuration=Release
+      run: |
+        for project in $PROJECTS_LIST; do
+          dotnet restore "$project" -p:Configuration=Release
+        done
 
     - name: Build
-      run: dotnet build TBC.OpenAPI.SDK.BusinessIntegrationServices.slnx -c Release --no-restore -p:SourceRevisionId=$(git rev-parse --short $GITHUB_SHA)
+      run: |
+        for project in $PROJECTS_LIST; do
+          dotnet build "$project" -c Release --no-restore -p:SourceRevisionId=$(git rev-parse --short $GITHUB_SHA)
+        done
 
     - name: Test
-      run: dotnet test TBC.OpenAPI.SDK.BusinessIntegrationServices.slnx -c Release --no-restore --no-build --verbosity normal
+      run: dotnet test tests/TBC.OpenAPI.SDK.BusinessIntegrationServices.Tests/TBC.OpenAPI.SDK.BusinessIntegrationServices.Tests.csproj -c Release --no-restore --no-build --verbosity normal
+
+  build-windows:
+    runs-on: windows-latest
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      DOTNET_NOLOGO: 1
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 1
+
+    - name: Setup .NET 10 SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+        include-prerelease: false
+
+    - name: Restore
+      run: dotnet restore examples/WinFormsAppExample/WinFormsAppExample.csproj -p:Configuration=Release
+
+    - name: Build
+      run: dotnet build examples/WinFormsAppExample/WinFormsAppExample.csproj -c Release --no-restore
