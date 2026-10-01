@@ -1,6 +1,7 @@
 // Copyright (C) TBC Bank. All Rights Reserved.
 
 using System.Globalization;
+using TBC.OpenAPI.SDK.BusinessIntegrationServices.Models.Responses;
 using TBC.OpenAPI.SDK.Core;
 using TBC.OpenAPI.SDK.Core.Authentication;
 using TBC.OpenAPI.SDK.Core.Exceptions;
@@ -87,6 +88,14 @@ namespace TBC.OpenAPI.SDK.BusinessIntegrationServices
             CancellationToken cancellationToken = default)
             => CallGetAsync<GetAccountMovementByIdResponse>(
                 $"{Constants.ApiPathPrefix}/accounts/movements/{id}",
+                null,
+                Constants.AccountsScope,
+                cancellationToken);
+
+        public Task<GetAccountBalanceResponse> GetAccountBalances(string accountNumber, string currency,
+            CancellationToken cancellationToken = default)
+            => CallGetAsync<GetAccountBalanceResponse>(
+                $"{Constants.ApiPathPrefix}/accounts/{accountNumber}/balances/{currency}",
                 null,
                 Constants.AccountsScope,
                 cancellationToken);

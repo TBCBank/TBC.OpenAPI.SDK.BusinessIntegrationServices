@@ -50,6 +50,22 @@ namespace TBC.OpenAPI.SDK.BusinessIntegrationServices.Tests.Unit
         }
 
         [Fact]
+        public async Task GetAccountBalances_WhenSuccess_ReturnsData()
+        {
+            var response = await _client.GetAccountBalances(
+                accountNumber: HttpHelperMocks.StatementAccountNumber,
+                currency: "GEL",
+                cancellationToken: CancellationToken.None);
+
+            using var _ = new AssertionScope();
+            response.Should().NotBeNull();
+            response.CurrentBalance.Should().Be(250.75m);
+            response.AvailableBalance.Should().Be(300.25m);
+            response.OverdraftLimit.Should().Be(50.00m);
+            response.Currency.Should().Be("GEL");
+        }
+
+        [Fact]
         public async Task GetAccountMovementById_WhenErrorResponse_ThrowsOpenApiException()
         {
             var act = async () => await _client.GetAccountMovementById("BAD", CancellationToken.None);

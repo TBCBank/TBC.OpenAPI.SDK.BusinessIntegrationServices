@@ -1,5 +1,6 @@
 // Copyright (C) TBC Bank. All Rights Reserved.
 
+using TBC.OpenAPI.SDK.BusinessIntegrationServices.Models.Responses;
 using TBC.OpenAPI.SDK.Core;
 
 namespace TBC.OpenAPI.SDK.BusinessIntegrationServices
@@ -25,6 +26,10 @@ namespace TBC.OpenAPI.SDK.BusinessIntegrationServices
 
         Task<GetAccountMovementByIdResponse> GetAccountMovementById(
             string id,
+            CancellationToken cancellationToken = default);
+
+        Task<GetAccountBalanceResponse> GetAccountBalances(
+            string accountNumber,string currency,
             CancellationToken cancellationToken = default);
 
         Task<ImportSingleTransfersResponse> ImportSingleTransfers(
